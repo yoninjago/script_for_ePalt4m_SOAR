@@ -1,0 +1,114 @@
+basic_information:
+  name: usb_connect_events_linux.py
+  displayName: Информация о подключаемых к АРМ usb устройств для ОС Linux
+  version: 1.0
+  group: dataEnrichment
+  platform:
+    - windows
+    - linux
+  comment: |
+    Скрипт получает временные метки, когда была произведена попытка подключения внешнего USB Mass Storage device на АРМ и кем.
+    Фиксируются также vid/pid устройства.
+    sid, dateFrom, dateTo - аргументы фильтры. При их отсутствии скрипт вернет всю доступную релевантную информацию из журнала.
+  prerequisites: |
+    Настройка ssh на удаленном хосте.
+    Протестированные ОС: Ubuntu 18/22, AltServer 10.
+  tags: 
+    - linux
+    - ssh
+script:
+  environment:
+    runtime: python3.8
+    locale: EN
+    requirements:
+      - name: paramiko
+        version: ">=2.7.2"
+      - name: pytz
+        version: "==2023.3"
+  adminRole: false
+  input:
+    hostname:
+      type: str
+      required: true
+      predefined:
+      decription: Имя целевой машины. Например, pc-001.
+      oneOf: ipv4
+    port:
+      type: int
+      required: false
+      predefined:
+      decription: Порт для подключения по ssh (по умолчанию 22). Например, 2222.
+      oneOf:
+    userName:
+      type: str
+      required: false
+      predefined:
+      decription: Имя пользователя по которому необходимо извлечь события. Например, 'user'.
+      oneOf:
+    dateFrom:
+      type: str
+      required: false
+      predefined:
+      decription: |
+        Дата с которой начать поиск событий. Формат даты ISO8601. Например, 2023-04-09T11:32:00Z.
+      oneOf:
+    dateTo:
+      type: str
+      required: false
+      predefined:
+      decription: |
+        Дата окончания поиска событий. Формат даты ISO8601. Например, 2023-04-09T11:32:00Z.
+      oneOf:
+  secrets:
+    linux_login:
+      type: str 
+      tags: linux
+      decription: Имя пользователя, под которым заходим на машину. Например, JohnDoe.
+      oneOf:
+    linux_password:
+      type: str 
+      tags: linux
+      decription: Пароль от пользователя. Например, qwerty123.
+      oneOf: ssh_key
+  output:
+    usbConnectEvents:
+      type: list
+      required: false
+      predefined:
+      decription: |
+        Содержит объекты с информацией о подключаемых USB Mass Storage device.
+      oneOf:
+      objects:
+        machineName:
+          type: str
+          required: true
+          predefined:
+          decription: Содержит имя ПК на котором зарегистрировано событие. Например, 'DESKTOP-VDCVV3O'.
+          oneOf:
+        dateTime:
+          type: str
+          required: false
+          predefined:
+          decription: Содержит дату и время события в формате ISO8601. Например, '2023-04-09T11:32:00Z'.
+          oneOf:
+        vid:
+          type: str
+          required: true
+          predefined:
+          decription: Содержит vid устройства. Например, 'VID_090C'.
+          oneOf:
+        pid:
+          type: str
+          required: false
+          predefined:
+          decription: Содержит pid устройства. Например, 'PID_1000'.
+          oneOf:
+        userName:
+          type: str
+          required: false
+          predefined:
+          decription: Содержит имя пользователя подключившего устройство. Например, 'JohnDoe'.
+          oneOf:
+launch_example: |
+  python usb_connect_events_linux.py '{"ipv4": "10.51.22.15", "dateFrom": "2023-06-20T07:36:33Z", "dateTo": "2024-06-20T07:36:33Z"}' '{"secrets":{"linux_login": "user", "linux_password": "P@ssw0rd"}}'
+tests: usb_connect_events_linux_tests.py
